@@ -9,7 +9,6 @@ class Product(ma.SQLAlchemyAutoSchema):
     product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
     quantity = Integer(required=True, load_only=True)
     price = Integer(required=True, load_only=True)
-    product_type = String(required=False, load_only=True)
 
     @validates_schema
     def validate_data(self, data, **kwargs):
@@ -19,11 +18,9 @@ class Product(ma.SQLAlchemyAutoSchema):
             raise ValidationError(f"Product: {product_name} already exists.")
         
 class Update(ma.SQLAlchemyAutoSchema):
-    product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
+    # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
     quantity = Integer(required=True, load_only=True)
 
 class Delete(ma.SQLAlchemyAutoSchema):
-    product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
-
-class ProductTypeDelete(ma.SQLAlchemyAutoSchema):
-    product_type = String(required=True, load_only=True)
+    # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
+    status = String(required=True, load_only=True)

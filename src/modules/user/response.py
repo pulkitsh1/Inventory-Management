@@ -9,5 +9,9 @@ class UserResponse(ma.SQLAlchemyAutoSchema):
     id = Integer(required=True, dump_only=True)
     name = String(required=True, dump_only=True)
     email = String(required=True, dump_only=True)
-    password = String(required=True, dump_only=True)
-    product_type = String(required=True, dump_only=True)
+
+class UserRolesResponse(ma.SQLAlchemyAutoSchema):
+    id = Integer(required=True, dump_only=True)
+    name = String(required=True, dump_only=True)
+    user_id = Integer(required=True, dump_only=True)
+    product_type_id = Integer(required=True, dump_only=True)

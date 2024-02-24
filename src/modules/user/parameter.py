@@ -1,5 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested
+from marshmallow.fields import String, Method, Nested, Integer
 from marshmallow import validate, validates_schema, ValidationError
 from src.modules.user.models import User
 
@@ -33,3 +33,12 @@ class UpdateSchema(ma.SQLAlchemyAutoSchema):
 
 class DeleteUserSchema(ma.SQLAlchemyAutoSchema):
     name = String(required=True, load_only=True)
+
+class RoleAddSchema(ma.SQLAlchemyAutoSchema):
+    name = String(required=True, load_only=True)
+    user_id = Integer(required=True, load_only=True)
+    product_id = Integer(required=True, load_only=True)
+
+class RoleUpdateSchema(ma.SQLAlchemyAutoSchema):
+    user_id = Integer(required=True, load_only=True)
+    # role_id = Integer(required=True, load_only=True)

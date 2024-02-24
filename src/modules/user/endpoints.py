@@ -4,11 +4,13 @@ from marshmallow import ValidationError
 from flask_jwt_extended import create_access_token , jwt_required, get_jwt
 import bcrypt
 from http import HTTPStatus
-from src.modules.user.models import User
+from src.modules.user.models import User, Roles
+from src.modules.product_type.models import Product_type
 from src.service_modules.db.conn import db
-from src.modules.user.parameter import SignupSchema, LoginSchema, ChangePasswordSchema, DeleteUserSchema, UpdateSchema
-from src.modules.user.response import UserResponse
+from src.modules.user.parameter import SignupSchema, LoginSchema, ChangePasswordSchema, DeleteUserSchema, UpdateSchema, RoleAddSchema, RoleUpdateSchema
+from src.modules.user.response import UserResponse, UserRolesResponse
 from src.modules.user.blocklist import BlockList
+from src.service_modules.auth import is_super_admin
 
 blp = Blueprint('userinfo',__name__)
 salt = bcrypt.gensalt()
@@ -19,11 +21,12 @@ class Login(MethodView):
     def post(self, req_data):
         try:
             res = User.query.filter_by(email=req_data.get('email')).first()
+            role =Product_type.query.filter_by(id=res.role[0].product_type_id).all()
             email_exist = None
             if res != None:
                 email_exist = res.password
 
-            if email_exist is None:
+            if email_exist is None or res.status == False:
                 return {'error':'Email does not exist in the database','status': HTTPStatus.NOT_FOUND}
 
             stored_pass = email_exist.encode('utf-8')
@@ -31,8 +34,11 @@ class Login(MethodView):
             check_pass = bcrypt.checkpw(provided_pass, stored_pass)
             if not check_pass:
                 return {'error':'Incorrect password','status': HTTPStatus.UNAUTHORIZED}
-            
-            token = create_access_token(identity= req_data.get('email'))
+            roles = []
+            for i in role:
+                roles.append(i.name)
+                
+            token = create_access_token(identity= [req_data.get('email'), res.role[0].name, roles])
             print(token)
 
             return {"message":"Login successful",'status': HTTPStatus.OK}
@@ -46,9 +52,14 @@ class Signup(MethodView):
 
     @blp.response(HTTPStatus.OK,schema=UserResponse(many=True))
     @jwt_required()
-    def get(self):
+    @is_super_admin
+    def get(self,id):
         try:
-            res = User.query.all()
+            if id == 'all':
+                res = User.query.all()
+            else:
+                res = User.query.filter_by(id = id).all()
+            
             return res
         
         except Exception as e:
@@ -60,52 +71,20 @@ class Signup(MethodView):
             hashed = bcrypt.hashpw(req_data.get('password').encode('utf-8'), salt)
             name = req_data.get('name').lower()
             
-            entry = User(name=name, email=req_data.get('email'), password=hashed)
+            entry = User(name=name, email=req_data.get('email'), password=hashed, status = True)
             db.session.add(entry)
             db.session.commit()
             return {"message":"User successfully registered.",'status': HTTPStatus.OK}
         except Exception as e:
             return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=UpdateSchema())
-    @jwt_required()
-    def put(self,req_data):
-        try:
-            res = User.query.filter_by(name=req_data.get('name')).first()
-            product_type = req_data.get('product_type').lower()
-            
-            res.product_type = product_type
-            db.session.commit()
-
-            return {"message":"Product type successfully updated.",'status': HTTPStatus.OK}
-        except Exception as e:
-            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
-        
-    @blp.arguments(schema=DeleteUserSchema())
-    @jwt_required()
-    def delete(self, get_data):
-        try:
-            res = User.query.filter_by(id=get_data.get('id')).first()
-            
-            db.session.delete(res)
-            db.session.commit()
-
-            return {"message":'User sucessfully deleted','status': HTTPStatus.OK}
-        except Exception as e:
-            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
-        
-        
-blp.add_url_rule('/signup', view_func=Signup.as_view('SignUp'))
-
-class ChangePassword(MethodView):
-
     @blp.arguments(schema=ChangePasswordSchema())
     @jwt_required()
     def put(self, req_data):
         try:
             email = get_jwt()['sub']
                 
-            email_exist = User.query.filter_by(email=email).first()
+            email_exist = User.query.filter_by(email=email[0]).first()
 
             stored_pass = email_exist.password.encode('utf-8')
             provided_pass = req_data.get('password').encode('utf-8')
@@ -125,7 +104,25 @@ class ChangePassword(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/changepassword', view_func=ChangePassword.as_view('ChangePassword'))
+    # @blp.arguments(schema=DeleteUserSchema())
+    @jwt_required()
+    @is_super_admin
+    def delete(self,id):
+        try:
+            res = User.query.filter_by(id=id).first()
+            if res.status == True:
+                res.status = False
+            else:
+                res.status = True
+            db.session.commit()
+
+            return {"message":"User's status sucessfully changed",'status': HTTPStatus.OK}
+        except Exception as e:
+            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+        
+        
+blp.add_url_rule('/signup/<id>', view_func=Signup.as_view('SignUp'))
+
 
 class Logout(MethodView):
     @jwt_required()
@@ -139,6 +136,62 @@ class Logout(MethodView):
 
 blp.add_url_rule('/logout', view_func=Logout.as_view('Logout'))
 
+class RolesManagement(MethodView):
+
+    @blp.response(HTTPStatus.OK,schema=UserRolesResponse(many=True))
+    @jwt_required()
+    @is_super_admin
+    def get(self,id):
+        try:
+            if id == 'all':
+                res = Roles.query.all()
+            else:
+                res = Roles.query.filter_by(id=id)
+            return res
+        
+        except Exception as e:
+            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+    
+    @blp.arguments(schema=RoleAddSchema())
+    @jwt_required()
+    @is_super_admin
+    def post(self, req_data):
+        try:
+            name = req_data.get('name')
+            user = User.query.filter_by(id=req_data.get('user_id')).first()
+            product_type = Product_type.query.filter_by(id=req_data.get('product_id')).first()
+            if user.status == False:
+                return {"error":"The user is deleted",'status': HTTPStatus.UNAUTHORIZED}
+            entry = Roles(name=name, user=user, product_type=product_type)
+            db.session.add(entry)
+            db.session.commit()
+            return {"message":"Role successfully registered.",'status': HTTPStatus.OK}
+        except Exception as e:
+            return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
+        
+    @blp.arguments(schema=RoleUpdateSchema())
+    @jwt_required()
+    @is_super_admin
+    def put(self, req_data,id):
+        try:
+            role = Roles.query.filter_by(id=id).first()
+            user = User.query.filter_by(id = req_data.get('user_id')).first()
+            if role == None:
+                return {"error":"The role id you gave does not exist",'status': HTTPStatus.UNAUTHORIZED}
+            if user == None:
+                return {"error":"The user id you gave does not exist",'status': HTTPStatus.UNAUTHORIZED}
+            if user.status == False:
+                return {"error":"The user is deleted",'status': HTTPStatus.UNAUTHORIZED}
+            role.user= user
+            db.session.commit()
+            return {"message":"Role successfully update.",'status': HTTPStatus.OK}
+        except Exception as e:
+            return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
+        
+
+blp.add_url_rule('/role/<id>', view_func=RolesManagement.as_view('RoleManagement'))
+
 @blp.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
     return {e.messages, HTTPStatus.BAD_REQUEST}
+

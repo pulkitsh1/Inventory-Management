@@ -3,11 +3,13 @@ from flask_smorest import Blueprint
 from http import HTTPStatus
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt
+from sqlalchemy import and_
 from src.service_modules.db.conn import db
 from src.modules.inventory.models import Inventory
-from src.modules.user.models import User
-from src.modules.inventory.parameter import Product, Update, Delete, ProductTypeDelete
-from src.modules.inventory.response import ProductResponse, ProductTypeResponse
+from src.modules.product_type.models import Product_type
+from src.modules.inventory.parameter import Product, Update, Delete
+from src.modules.inventory.response import ProductResponse
+from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 
 blp = Blueprint('inventory',__name__)
 
@@ -15,13 +17,34 @@ class Inventory_Operations(MethodView):
 
     @blp.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
-    def get(self):
+    @is_reader
+    def get(self,type,id):
         try:
-            email = get_jwt()['sub']
-            email_exist = User.query.filter_by(email=email).first()
-            type = email_exist.product_type
+            domain = get_jwt()['sub']
+            role= domain[1]
+            if role == 'super_admin':
+                if id == 'all':
+                    res= Product_type.query.filter_by(name=type).first()
+                    res = Inventory.query.filter_by(product_type_id=res.id).all()
+                else:
+                    res = Inventory.query.filter_by(id=id).all()
+                    if res[0].products.name != type:
+                            res = []
+            else:
+                domain = domain[2]
 
-            res = Inventory.query.filter_by(product_type=type).all()
+                if type in domain:
+                    if id == 'all':
+                        res= Product_type.query.filter_by(name=type).first()
+                        res = Inventory.query.filter_by(product_type_id=res.id).all()
+                    else:
+                        res = Inventory.query.filter(
+                            and_(
+                                Inventory.id == id,
+                                Inventory.status == 'active'
+                            )).all()
+                        if res[0].products.name != type:
+                            res = []
             return res
         
         except Exception as e:
@@ -29,81 +52,131 @@ class Inventory_Operations(MethodView):
 
     @blp.arguments(schema=Product())
     @jwt_required()
-    def post(self, req_data):
+    @is_admin
+    def post(self, req_data,type,id):
         try:
-            email = get_jwt()['sub']
-            email_exist = User.query.filter_by(email=email).first()
-            type = email_exist.product_type
-            product_name = req_data.get('product_name').lower()
-            entry = Inventory(product_name=product_name, price=req_data.get('price'), quantity=req_data.get('quantity'), product_type=type)
-            db.session.add(entry)
-            db.session.commit()
-            return {"message":"Product added successfully.","status": HTTPStatus.OK}
+            domain = get_jwt()['sub']
+            role= domain[1]
+            if role == 'super_admin':
+                res = Product_type.query.filter_by(name=type).first()
+                product_name = req_data.get('product_name').lower()
+                entry = Inventory(product_name=product_name, price=req_data.get('price'), quantity=req_data.get('quantity'), products=res, status = "active")
+                db.session.add(entry)
+                db.session.commit()
+                return {"message":"Product added successfully.","status": HTTPStatus.OK}
+            else:
+                domain = domain[2]
+
+                if type in domain:
+                    res = Product_type.query.filter_by(name=type).first()
+                    product_name = req_data.get('product_name').lower()
+                    entry = Inventory(product_name=product_name, price=req_data.get('price'), quantity=req_data.get('quantity'), products=res, status = "active")
+                    db.session.add(entry)
+                    db.session.commit()
+                    return {"message":"Product added successfully.","status": HTTPStatus.OK}
+                else:
+                    return {"error":"The product type you are trying to add is out of your domain",'status': HTTPStatus.UNAUTHORIZED}
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
     
     @blp.arguments(schema=Update())
     @jwt_required()
-    def put(self, get_data):
+    @is_member
+    def put(self, get_data,type,id):
         try:
-            product_data = Inventory.query.filter_by(product_name=get_data.get('product_name')).first()
-            
-            product_data.quantity = product_data.quantity + get_data.get('quantity')
-            db.session.commit()
+            domain = get_jwt()['sub']
+            role= domain[1]
+            if role == 'super_admin':
+                product_data = Inventory.query.filter_by(id=id).first()
+                if product_data.products.name != type:
+                    return {"error":"Your product id doesn't match your product type",'status': HTTPStatus.UNAUTHORIZED}
+                if product_data == None:
+                    return {"error":"The product id is not listed",'status': HTTPStatus.UNAUTHORIZED}
+                
+                if product_data.status != "active":
+                    return {"error":"The product is not available",'status': HTTPStatus.UNAUTHORIZED}
+                
+                product_data.quantity = product_data.quantity + get_data.get('quantity')
+                db.session.commit()
 
-            return {"message":"Quanity of the product successfully updated.","status": HTTPStatus.OK}
+                return {"message":"Quanity of the product successfully updated.","status": HTTPStatus.OK}
+            else:
+                domain = domain[2]
+
+                if type in domain:
+                    product_data = Inventory.query.filter_by(id=id).first()
+                    if product_data.products.name != type:
+                        return {"error":"Your product id doesn't match your product type",'status': HTTPStatus.UNAUTHORIZED}
+                    if product_data == None:
+                        return {"error":"The product id is not listed",'status': HTTPStatus.UNAUTHORIZED}
+                    
+                    if product_data.status != "active":
+                        return {"error":"The product is not available",'status': HTTPStatus.UNAUTHORIZED}
+                    
+                    product_data.quantity = product_data.quantity + get_data.get('quantity')
+                    db.session.commit()
+
+                    return {"message":"Quanity of the product successfully updated.","status": HTTPStatus.OK}
+                else:
+                    return {"error":"The product you are trying to update is out of your domain",'status': HTTPStatus.UNAUTHORIZED}
+            
         except Exception as e:
             return {'error':f'{str(e)}','status':HTTPStatus.INTERNAL_SERVER_ERROR}
         
     @blp.arguments(schema=Delete())
     @jwt_required()
-    def delete(self, get_data):
+    @is_admin
+    def delete(self, get_data,type,id):
         try:
-            res = Inventory.query.filter_by(product_name=get_data.get('product_name')).first()
-            
-            db.session.delete(res)
-            db.session.commit()
+            domain = get_jwt()['sub']
+            role= domain[1]
+            if role == 'super_admin':
+                res = Inventory.query.filter_by(id=id).first()
+                if res.products.name != type:
+                    return {"error":"Your product id doesn't match your product type",'status': HTTPStatus.UNAUTHORIZED}
+                if res == None:
+                    return {"error":"The product id is not listed",'status': HTTPStatus.UNAUTHORIZED}
+                
+                res.status = get_data.get('status')
+                db.session.commit()
 
-            return {'message':'Product sucessfully deleted',"status": HTTPStatus.OK}
+                return {'message':'Product status successfully updated',"status": HTTPStatus.OK}
+            else:
+                domain = domain[2]
+
+                if type in domain:
+                    res = Inventory.query.filter_by(id=id).first()
+                    if res.products.name != type:
+                        return {"error":"Your product id doesn't match your product type",'status': HTTPStatus.UNAUTHORIZED}
+                    if res == None:
+                        return {"error":"The product id is not listed",'status': HTTPStatus.UNAUTHORIZED}
+                    
+                    res.status = get_data.get('status')
+                    db.session.commit()
+
+                    return {'message':'Product status successfully updated',"status": HTTPStatus.OK}
+                else:
+                    return {"error":"The product status you are trying to change is out of your domain",'status': HTTPStatus.UNAUTHORIZED}
+
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
 
-blp.add_url_rule('/inventory', view_func=Inventory_Operations.as_view('Inventory_Operation'))
+blp.add_url_rule('/inventory/<type>/<id>', view_func=Inventory_Operations.as_view('Inventory_Operation'))
 
-class ProductTypeOperations(MethodView):
-
-    @blp.response(HTTPStatus.OK,schema=ProductTypeResponse(many=True))
+class ListProducts(MethodView):
+    @blp.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
+    @is_super_admin
     def get(self):
         try:
-            # email = get_jwt()['sub']
-            # email_exist = User.query.filter_by(email=email).first()
-            # type = email_exist.product_type
-
-            res = User.query.all()
+            res = Inventory.query.all()
             return res
         
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @blp.arguments(schema=ProductTypeDelete())
-    @jwt_required()
-    def delete(self, req_data):
-        try:
-            res = Inventory.query.filter_by(product_type=req_data.get('product_type')).all()
-            prod = User.query.filter_by(product_type=req_data.get('product_type')).first()
-            
-            prod.product_type = 'null'
-            
-            for r in res:
-                db.session.delete(r)
-            db.session.commit()
+blp.add_url_rule('/inventory', view_func=ListProducts.as_view('ListingOfProducts'))
 
-            return {'message':'Product Type sucessfully deleted',"status": HTTPStatus.OK}
-        except Exception as e:
-            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
-        
-blp.add_url_rule('/product/type', view_func=ProductTypeOperations.as_view('product_type_operation'))
 
 @blp.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
