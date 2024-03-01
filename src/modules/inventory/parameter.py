@@ -20,6 +20,7 @@ class Product(ma.SQLAlchemyAutoSchema):
 class Update(ma.SQLAlchemyAutoSchema):
     # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
     quantity = Integer(required=True, load_only=True)
+    emp_id = Integer(required=True, load_only=True)
 
 class Delete(ma.SQLAlchemyAutoSchema):
     # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)

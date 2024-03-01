@@ -1,8 +1,7 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
-from flask_jwt_extended import jwt_required, get_jwt
-from sqlalchemy import and_
+from flask_jwt_extended import jwt_required
 from src.modules.product_type.models import Product_type
 from src.service_modules.auth import is_super_admin
 from src.service_modules.db.conn import db
@@ -70,4 +69,4 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/product/type/<id>', view_func=ProductTypeOperations.as_view('product_type_operation'))
+blp.add_url_rule('/product_type/<id>', view_func=ProductTypeOperations.as_view('product_type_operation'))

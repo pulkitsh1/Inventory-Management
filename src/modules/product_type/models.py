@@ -6,6 +6,7 @@ class Product_type(db.Model):
     description = db.Column(db.String(256), nullable=False)
     product = db.relationship('Inventory', backref= 'products')
     roles = db.relationship('Roles', backref= 'product_type')
+    assign = db.relationship('Assigned', backref= 'product_type')
     status = db.Column(db.String(80), nullable=False)
 
     def __repr__(self):

@@ -6,6 +6,8 @@ from src.modules.user.endpoints import blp as user_blp
 from src.modules.inventory.endpoints import blp as stock_blp
 from src.modules.transactions.endpoints import blp as transaction_blp
 from src.modules.product_type.endpoints import blp as type_blp
+from src.modules.employees.endpoints import blp as emp_blp
+from src.modules.assigned.endpoints import blp as assign_blp
 from src.modules.user.blocklist import BlockList
 from src.service_modules.db.conn import db
 import config
@@ -23,6 +25,8 @@ app.register_blueprint(user_blp)
 app.register_blueprint(stock_blp)
 app.register_blueprint(transaction_blp)
 app.register_blueprint(type_blp)
+app.register_blueprint(emp_blp)
+app.register_blueprint(assign_blp)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blocklist(jwt_header, jwt_payload):

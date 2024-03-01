@@ -6,6 +6,7 @@ import bcrypt
 from http import HTTPStatus
 from src.modules.user.models import User, Roles
 from src.modules.product_type.models import Product_type
+from src.modules.employees.models import Employee
 from src.service_modules.db.conn import db
 from src.modules.user.parameter import SignupSchema, LoginSchema, ChangePasswordSchema, DeleteUserSchema, UpdateSchema, RoleAddSchema, RoleUpdateSchema
 from src.modules.user.response import UserResponse, UserRolesResponse
@@ -36,7 +37,7 @@ class Login(MethodView):
                 return {'error':'Incorrect password','status': HTTPStatus.UNAUTHORIZED}
             roles = []
             for i in role:
-                roles.append(i.name)
+                roles.append(i.id)
                 
             token = create_access_token(identity= [req_data.get('email'), res.role[0].name, roles])
             print(token)
@@ -66,13 +67,15 @@ class Signup(MethodView):
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
     @blp.arguments(schema=SignupSchema())
-    def post(self, req_data):
+    def post(self, req_data,id):
         try:
             hashed = bcrypt.hashpw(req_data.get('password').encode('utf-8'), salt)
             name = req_data.get('name').lower()
             
             entry = User(name=name, email=req_data.get('email'), password=hashed, status = True)
+            emp_entry = Employee(name=name,email=req_data.get('email'),status = True)
             db.session.add(entry)
+            db.session.add(emp_entry)
             db.session.commit()
             return {"message":"User successfully registered.",'status': HTTPStatus.OK}
         except Exception as e:
@@ -80,7 +83,7 @@ class Signup(MethodView):
     
     @blp.arguments(schema=ChangePasswordSchema())
     @jwt_required()
-    def put(self, req_data):
+    def put(self, req_data,id):
         try:
             email = get_jwt()['sub']
                 
