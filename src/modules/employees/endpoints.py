@@ -9,11 +9,11 @@ from src.modules.employees.models import Employee
 from src.service_modules.db.conn import db
 from src.service_modules.auth import is_super_admin
 
-blp = Blueprint('employeeinfo',__name__)
+api = Blueprint('employeeinfo',__name__)
 
 class EmployeeOperations(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=EmployeeResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=EmployeeResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self,id):
@@ -28,7 +28,7 @@ class EmployeeOperations(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=EmpAddchema())
+    @api.arguments(schema=EmpAddchema())
     def post(self, req_data,id):
         try:
             name = req_data.get('name').lower()
@@ -56,4 +56,4 @@ class EmployeeOperations(MethodView):
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
         
-blp.add_url_rule('/employee/<id>', view_func=EmployeeOperations.as_view('employeeOperations'))
+api.add_url_rule('/employee/<id>', view_func=EmployeeOperations.as_view('employeeOperations'))

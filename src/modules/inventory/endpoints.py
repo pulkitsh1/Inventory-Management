@@ -13,11 +13,11 @@ from src.modules.inventory.parameter import Product, Update, Delete
 from src.modules.inventory.response import ProductResponse
 from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 
-blp = Blueprint('inventory',__name__)
+api = Blueprint('inventory',__name__)
 
 class Inventory_Operations(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=ProductResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
     @is_reader
     def get(self,product_type_id,id):
@@ -50,7 +50,7 @@ class Inventory_Operations(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
-    @blp.arguments(schema=Product())
+    @api.arguments(schema=Product())
     @jwt_required()
     @is_admin
     def post(self, req_data,product_type_id,id):
@@ -79,7 +79,7 @@ class Inventory_Operations(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=Update())
+    @api.arguments(schema=Update())
     @jwt_required()
     @is_member
     def put(self, get_data,product_type_id,id):
@@ -129,7 +129,7 @@ class Inventory_Operations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status':HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @blp.arguments(schema=Delete())
+    @api.arguments(schema=Delete())
     @jwt_required()
     @is_admin
     def delete(self, get_data,product_type_id,id):
@@ -167,10 +167,10 @@ class Inventory_Operations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
 
-blp.add_url_rule('/inventory/<id>/product_type/<product_type_id>', view_func=Inventory_Operations.as_view('Inventory_Operation'))
+api.add_url_rule('/inventory/<id>/product_type/<product_type_id>', view_func=Inventory_Operations.as_view('Inventory_Operation'))
 
 class ListProducts(MethodView):
-    @blp.response(HTTPStatus.OK,schema=ProductResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self):
@@ -181,7 +181,7 @@ class ListProducts(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/inventory', view_func=ListProducts.as_view('ListingOfProducts'))
+api.add_url_rule('/inventory', view_func=ListProducts.as_view('ListingOfProducts'))
 
 class CountOfProducts(MethodView):
     @jwt_required()
@@ -224,9 +224,9 @@ class CountOfProducts(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/countofproducts/inventory/<id>/product_type/<product_type_id>', view_func=CountOfProducts.as_view('ListingOfProducts'))
+api.add_url_rule('/countofproducts/inventory/<id>/product_type/<product_type_id>', view_func=CountOfProducts.as_view('ListingOfProducts'))
 
 
-@blp.errorhandler(ValidationError)
+@api.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
     return {e.messages, HTTPStatus.BAD_REQUEST}

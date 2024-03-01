@@ -2,12 +2,12 @@ from flask import Flask
 from http import HTTPStatus
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
-from src.modules.user.endpoints import blp as user_blp
-from src.modules.inventory.endpoints import blp as stock_blp
-from src.modules.transactions.endpoints import blp as transaction_blp
-from src.modules.product_type.endpoints import blp as type_blp
-from src.modules.employees.endpoints import blp as emp_blp
-from src.modules.assigned.endpoints import blp as assign_blp
+from src.modules.user.endpoints import api as user_api
+from src.modules.inventory.endpoints import api as stock_api
+from src.modules.transactions.endpoints import api as transaction_api
+from src.modules.product_type.endpoints import api as type_api
+from src.modules.employees.endpoints import api as emp_api
+from src.modules.assigned.endpoints import api as assign_api
 from src.modules.user.blocklist import BlockList
 from src.service_modules.db.conn import db
 import config
@@ -21,12 +21,12 @@ db.init_app(app)
 jwt = JWTManager(app)
 migrate = Migrate(app, db)
 
-app.register_blueprint(user_blp)
-app.register_blueprint(stock_blp)
-app.register_blueprint(transaction_blp)
-app.register_blueprint(type_blp)
-app.register_blueprint(emp_blp)
-app.register_blueprint(assign_blp)
+app.register_blueprint(user_api)
+app.register_blueprint(stock_api)
+app.register_blueprint(transaction_api)
+app.register_blueprint(type_api)
+app.register_blueprint(emp_api)
+app.register_blueprint(assign_api)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_in_blocklist(jwt_header, jwt_payload):

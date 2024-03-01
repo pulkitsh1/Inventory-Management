@@ -10,11 +10,11 @@ from src.modules.assigned.response import AssignedResponse
 from src.modules.assigned.parameter import Update
 from src.service_modules.auth import is_reader
 
-blp = Blueprint('assigned',__name__)
+api = Blueprint('assigned',__name__)
 
 class Assigned_Operations(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=AssignedResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=AssignedResponse(many=True))
     @jwt_required()
     @is_reader
     def get(self,product_type_id,id):
@@ -47,7 +47,7 @@ class Assigned_Operations(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=Update())
+    @api.arguments(schema=Update())
     @jwt_required()
     def put(self,req_data,product_type_id,id):
         try:
@@ -75,4 +75,8 @@ class Assigned_Operations(MethodView):
                     return {'message': "Assigned product's status successfully changed.","status": HTTPStatus.OK}
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
-blp.add_url_rule('/assigned/<id>/product_type/<product_type_id>', view_func=Assigned_Operations.as_view('Assigned_Operations'))
+api.add_url_rule('/assigned/<id>/product_type/<product_type_id>', view_func=Assigned_Operations.as_view('Assigned_Operations'))
+
+@api.errorhandler(ValidationError)
+def handle_marshmallow_error(e):
+    return {e.messages, HTTPStatus.BAD_REQUEST}

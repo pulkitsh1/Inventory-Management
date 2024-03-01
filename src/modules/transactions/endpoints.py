@@ -12,11 +12,11 @@ from src.modules.transactions.parameter import TransactionSchema
 from src.modules.transactions.response import TransactionResponse
 from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 
-blp = Blueprint('transactions',__name__)
+api = Blueprint('transactions',__name__)
 
 class Transaction(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
     @jwt_required()
     @is_reader
     def get(self,product_type_id,transactionid):
@@ -55,7 +55,7 @@ class Transaction(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
-    @blp.arguments(schema=TransactionSchema())
+    @api.arguments(schema=TransactionSchema())
     @jwt_required()
     @is_admin
     def post(self, req_data,product_type_id,transactionid):
@@ -85,7 +85,7 @@ class Transaction(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    # @blp.arguments(schema=TransactionIDSchema())
+    # @api.arguments(schema=TransactionIDSchema())
     @jwt_required()
     @is_member
     def put(self,product_type_id,transactionid):
@@ -126,12 +126,12 @@ class Transaction(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/transactions/<transactionid>/product_type/<product_type_id>', view_func=Transaction.as_view('Transaction'))
+api.add_url_rule('/transactions/<transactionid>/product_type/<product_type_id>', view_func=Transaction.as_view('Transaction'))
 
 class Transactions(MethodView):
 
-    # @blp.arguments(schema=TransactionIDSchema())
-    @blp.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
+    # @api.arguments(schema=TransactionIDSchema())
+    @api.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self):
@@ -142,8 +142,8 @@ class Transactions(MethodView):
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
         
-blp.add_url_rule('/transactions', view_func=Transactions.as_view('Transactions'))
+api.add_url_rule('/transactions', view_func=Transactions.as_view('Transactions'))
 
-@blp.errorhandler(ValidationError)
+@api.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
     return {e.messages, HTTPStatus.BAD_REQUEST}

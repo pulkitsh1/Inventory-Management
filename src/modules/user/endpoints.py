@@ -13,12 +13,12 @@ from src.modules.user.response import UserResponse, UserRolesResponse
 from src.modules.user.blocklist import BlockList
 from src.service_modules.auth import is_super_admin
 
-blp = Blueprint('userinfo',__name__)
+api = Blueprint('userinfo',__name__)
 salt = bcrypt.gensalt()
 
 class Login(MethodView):
 
-    @blp.arguments(schema=LoginSchema())
+    @api.arguments(schema=LoginSchema())
     def post(self, req_data):
         try:
             res = User.query.filter_by(email=req_data.get('email')).first()
@@ -47,11 +47,11 @@ class Login(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/login', view_func=Login.as_view('Login'))
+api.add_url_rule('/login', view_func=Login.as_view('Login'))
 
 class Signup(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=UserResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=UserResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self,id):
@@ -66,7 +66,7 @@ class Signup(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=SignupSchema())
+    @api.arguments(schema=SignupSchema())
     def post(self, req_data,id):
         try:
             hashed = bcrypt.hashpw(req_data.get('password').encode('utf-8'), salt)
@@ -81,7 +81,7 @@ class Signup(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=ChangePasswordSchema())
+    @api.arguments(schema=ChangePasswordSchema())
     @jwt_required()
     def put(self, req_data,id):
         try:
@@ -107,7 +107,7 @@ class Signup(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    # @blp.arguments(schema=DeleteUserSchema())
+    # @api.arguments(schema=DeleteUserSchema())
     @jwt_required()
     @is_super_admin
     def delete(self,id):
@@ -124,7 +124,7 @@ class Signup(MethodView):
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
         
-blp.add_url_rule('/signup/<id>', view_func=Signup.as_view('SignUp'))
+api.add_url_rule('/signup/<id>', view_func=Signup.as_view('SignUp'))
 
 
 class Logout(MethodView):
@@ -137,11 +137,11 @@ class Logout(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
 
-blp.add_url_rule('/logout', view_func=Logout.as_view('Logout'))
+api.add_url_rule('/logout', view_func=Logout.as_view('Logout'))
 
 class RolesManagement(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=UserRolesResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=UserRolesResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self,id):
@@ -155,7 +155,7 @@ class RolesManagement(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
     
-    @blp.arguments(schema=RoleAddSchema())
+    @api.arguments(schema=RoleAddSchema())
     @jwt_required()
     @is_super_admin
     def post(self, req_data):
@@ -172,7 +172,7 @@ class RolesManagement(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @blp.arguments(schema=RoleUpdateSchema())
+    @api.arguments(schema=RoleUpdateSchema())
     @jwt_required()
     @is_super_admin
     def put(self, req_data,id):
@@ -192,9 +192,9 @@ class RolesManagement(MethodView):
             return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
 
-blp.add_url_rule('/role/<id>', view_func=RolesManagement.as_view('RoleManagement'))
+api.add_url_rule('/role/<id>', view_func=RolesManagement.as_view('RoleManagement'))
 
-@blp.errorhandler(ValidationError)
+@api.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
     return {e.messages, HTTPStatus.BAD_REQUEST}
 
