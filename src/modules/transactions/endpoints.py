@@ -7,41 +7,47 @@ from sqlalchemy import and_
 from src.service_modules.db.conn import db
 from src.modules.transactions.models import TransactionsModel
 from src.modules.inventory.models import Inventory
-from src.modules.transactions.parameter import TransactionSchema, TransactionIDSchema
+from src.modules.product_type.models import Product_type
+from src.modules.transactions.parameter import TransactionSchema
 from src.modules.transactions.response import TransactionResponse
 from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 
-blp = Blueprint('transactions',__name__)
+api = Blueprint('transactions',__name__)
 
 class Transaction(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
     @jwt_required()
     @is_reader
-    def get(self,type,transactionid):
+    def get(self,product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
             role= domain[1]
             if role == 'super_admin':
+                print
                 if transactionid == 'all':
-                     res = TransactionsModel.query.filter_by(product_type= type).all()
+                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                     res = TransactionsModel.query.filter_by(product_type= res.name).all()
                 else:
+                    res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter(
                             and_(
                                 TransactionsModel.transaction_id == transactionid,
-                                TransactionsModel.product_type == type
+                                TransactionsModel.product_type == res.name
                             )
                         ).all()
             else:
                 domain = domain[2]
-                if type in domain:
+                if int(product_type_id) in domain:
                     if transactionid == 'all':
-                        res = TransactionsModel.query.filter_by(product_type= type).all()
+                        res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                        res = TransactionsModel.query.filter_by(product_type= res.name).all()
                     else:
+                        res = Product_type.query.filter_by(id = int(product_type_id)).first()
                         res = TransactionsModel.query.filter(
                                 and_(
                                     TransactionsModel.transaction_id == transactionid,
-                                    TransactionsModel.product_type == type
+                                    TransactionsModel.product_type == res.name
                                 )
                             ).all()
             return res
@@ -49,25 +55,27 @@ class Transaction(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
-    @blp.arguments(schema=TransactionSchema())
+    @api.arguments(schema=TransactionSchema())
     @jwt_required()
     @is_admin
-    def post(self, req_data,type,transactionid):
+    def post(self, req_data,product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
             role= domain[1]
             if role == 'super_admin':
+                res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 entry = TransactionsModel(product_name= req_data.get('product_name'), price_per_unit= req_data.get('price_per_unit'),
-                                    total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=type,
+                                    total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=res.name,
                                     transaction_id= transactionid, order_status= 'order placed')
                 db.session.add(entry)
                 db.session.commit()
                 return {"message":"Transaction recorded successfully.","status": HTTPStatus.OK}
             else:
                 domain = domain[2]
-                if type in domain:
+                if int(product_type_id) in domain:
+                    res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     entry = TransactionsModel(product_name= req_data.get('product_name'), price_per_unit= req_data.get('price_per_unit'),
-                                        total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=type,
+                                        total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=res.name,
                                         transaction_id= transactionid, order_status= 'order placed')
                     db.session.add(entry)
                     db.session.commit()
@@ -77,10 +85,10 @@ class Transaction(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    # @blp.arguments(schema=TransactionIDSchema())
+    # @api.arguments(schema=TransactionIDSchema())
     @jwt_required()
     @is_member
-    def put(self,type,transactionid):
+    def put(self,product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
             role= domain[1]
@@ -100,7 +108,7 @@ class Transaction(MethodView):
             else:
                 domain = domain[2]
 
-                if type in domain:
+                if int(product_type_id) in domain:
                     res = TransactionsModel.query.filter_by(transaction_id= transactionid).first()
                     res.order_status = 'Delivered'
                     quantity = res.quantity
@@ -118,12 +126,12 @@ class Transaction(MethodView):
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/transactions/<type>/<transactionid>', view_func=Transaction.as_view('Transaction'))
+api.add_url_rule('/transactions/<transactionid>/product_type/<product_type_id>', view_func=Transaction.as_view('Transaction'))
 
 class Transactions(MethodView):
 
-    # @blp.arguments(schema=TransactionIDSchema())
-    @blp.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
+    # @api.arguments(schema=TransactionIDSchema())
+    @api.response(HTTPStatus.OK,schema=TransactionResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self):
@@ -134,8 +142,8 @@ class Transactions(MethodView):
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
         
-blp.add_url_rule('/transactions', view_func=Transactions.as_view('Transactions'))
+api.add_url_rule('/transactions', view_func=Transactions.as_view('Transactions'))
 
-@blp.errorhandler(ValidationError)
+@api.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
     return {e.messages, HTTPStatus.BAD_REQUEST}

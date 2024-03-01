@@ -1,19 +1,18 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
-from flask_jwt_extended import jwt_required, get_jwt
-from sqlalchemy import and_
+from flask_jwt_extended import jwt_required
 from src.modules.product_type.models import Product_type
 from src.service_modules.auth import is_super_admin
 from src.service_modules.db.conn import db
 from src.modules.product_type.parameter import ProductType_Schema, ProductTypeDelete, ProductTypeUpdate
 from src.modules.product_type.response import ProductTypeResponse
 
-blp = Blueprint('productype',__name__)
+api = Blueprint('productype',__name__)
 
 class ProductTypeOperations(MethodView):
 
-    @blp.response(HTTPStatus.OK,schema=ProductTypeResponse(many=True))
+    @api.response(HTTPStatus.OK,schema=ProductTypeResponse(many=True))
     @jwt_required()
     @is_super_admin
     def get(self,id):
@@ -27,7 +26,7 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
 
-    @blp.arguments(schema=ProductType_Schema())
+    @api.arguments(schema=ProductType_Schema())
     @jwt_required()
     @is_super_admin    
     def post(self, req_data,id):
@@ -41,7 +40,7 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @blp.arguments(schema=ProductTypeUpdate())
+    @api.arguments(schema=ProductTypeUpdate())
     @jwt_required()
     @is_super_admin    
     def put(self, req_data, id):
@@ -54,7 +53,7 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @blp.arguments(schema=ProductTypeDelete())
+    @api.arguments(schema=ProductTypeDelete())
     @jwt_required()
     @is_super_admin
     def delete(self, req_data, id):
@@ -70,4 +69,4 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
         
-blp.add_url_rule('/product/type/<id>', view_func=ProductTypeOperations.as_view('product_type_operation'))
+api.add_url_rule('/product_type/<id>', view_func=ProductTypeOperations.as_view('product_type_operation'))
