@@ -8,4 +8,6 @@ class Assigned(db.Model):
     product_type_id = db.Column(db.Integer, db.ForeignKey('product_type.id'),nullable=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'))
     assignment_date = db.Column(db.Date, default=datetime.utcnow)
+    return_date = db.Column(db.Date,nullable=True)
+    unique_code = db.Column(db.String(160),nullable=True)
     status = db.Column(db.TEXT, nullable=True)

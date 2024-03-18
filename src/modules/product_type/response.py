@@ -1,5 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested, Integer
+from marshmallow.fields import String, Integer
 
 ma = Marshmallow()
 

@@ -1,5 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested, Integer
+from marshmallow.fields import String
 from marshmallow import validate, validates_schema, ValidationError
 from src.modules.product_type.models import Product_type
 

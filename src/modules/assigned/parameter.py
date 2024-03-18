@@ -1,9 +1,7 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested, Integer
-from marshmallow import validate, validates_schema, ValidationError
-from src.modules.inventory.models import Inventory
+from marshmallow.fields import String
 
 ma = Marshmallow()
 
-class Update(ma.SQLAlchemyAutoSchema):
+class UpdateStatus(ma.SQLAlchemyAutoSchema):
     status = String(required=True, load_only=True)

@@ -1,5 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested, Integer
+from marshmallow.fields import String, Integer
 from marshmallow import validate, validates_schema, ValidationError
 from src.modules.inventory.models import Inventory
 
@@ -21,6 +21,7 @@ class Update(ma.SQLAlchemyAutoSchema):
     # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
     quantity = Integer(required=True, load_only=True)
     emp_id = Integer(required=True, load_only=True)
+    unique_code = String(required=False, load_only=True)
 
 class Delete(ma.SQLAlchemyAutoSchema):
     # product_name = String(required=True,validate=[validate.Length(min=3)], load_only=True)
