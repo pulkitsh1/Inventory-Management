@@ -10,7 +10,6 @@ from src.modules.employees.models import Employee
 from src.service_modules.db.conn import db
 from src.modules.user.parameter import SignupSchema, LoginSchema, ChangePasswordSchema, RoleAddSchema, RoleUpdateSchema
 from src.modules.user.response import UserResponse, UserRolesResponse
-from src.modules.user.blocklist import BlockList
 from src.service_modules.auth import is_super_admin
 import config
 
@@ -150,8 +149,6 @@ class Logout(MethodView):
     @jwt_required()
     def post(self):
         try:
-            # jti = get_jwt()['jti']
-            # BlockList.add(jti)
             jti = get_jwt()["jti"]
             config.jwt_redis_blocklist.set(jti, "", ex=config.ACCESS_EXPIRES)
             return {"merssage":"Successfully Logged out",'status': HTTPStatus.OK}
