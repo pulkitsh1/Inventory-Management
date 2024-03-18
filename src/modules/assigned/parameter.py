@@ -5,5 +5,5 @@ from src.modules.inventory.models import Inventory
 
 ma = Marshmallow()
 
-class Update(ma.SQLAlchemyAutoSchema):
+class UpdateStatus(ma.SQLAlchemyAutoSchema):
     status = String(required=True, load_only=True)

@@ -11,4 +11,6 @@ class AssignedResponse(ma.SQLAlchemyAutoSchema):
     employee_id = Integer(required=True, dump_only=True)
     product_type_id = Integer(required=True, dump_only=True)
     assignment_date = Date(required=True, dump_only=True)
+    return_date = Date(required=True, dump_only=True)
+    unique_code = String(required=True, dump_only=True)
     status = String(required=True, dump_only=True)
