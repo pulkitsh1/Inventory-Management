@@ -1,6 +1,5 @@
 from flask_marshmallow import Marshmallow
-from marshmallow.fields import String, Method, Nested, Integer,Boolean
-from src.modules.inventory.models import Inventory
+from marshmallow.fields import String, Integer,Boolean
 
 ma = Marshmallow()
 

@@ -31,17 +31,6 @@ api = Api(app)
 blplist = [user_api, stock_api, transaction_api, type_api, emp_api, assign_api]
 for blp in blplist:
     api.register_blueprint(blp)
-
-# api.register_blueprint(user_api)
-# api.register_blueprint(stock_api)
-# api.register_blueprint(transaction_api)
-# api.register_blueprint(type_api)
-# api.register_blueprint(emp_api)
-# api.register_blueprint(assign_api)
-
-# @jwt.token_in_blocklist_loader
-# def check_if_token_in_blocklist(jwt_header, jwt_payload):
-#     return jwt_payload['jti'] in BlockList
     
 @jwt.token_in_blocklist_loader
 def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
