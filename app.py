@@ -3,7 +3,6 @@ from http import HTTPStatus
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from src.modules import user_api, stock_api, transaction_api, type_api, emp_api, assign_api
-from src.modules.user.blocklist import BlockList
 from src.service_modules.db.conn import db
 import config
 from flask_smorest import Api
