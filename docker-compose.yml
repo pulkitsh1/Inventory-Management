@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - localhost
+    environment:
+      MYSQL_ROOT_PASSWORD: iamthe13002
+      MYSQL_DATABASE: inventory
+      # MYSQL_USER: root
+      MYSQL_PASSWORD: iamthe13002
+    networks:
+      - my_network
+
+  localhost:
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql/data
+    environment:
+      MYSQL_ROOT_PASSWORD: iamthe13002
+      MYSQL_DATABASE: inventory
+      # MYSQL_USER: root
+      MYSQL_PASSWORD: iamthe13002
+    network_mode: "host"
+
+networks:
+  my_network:
+    driver: bridge
+
+
+volumes:
+  mysql_data: {}
