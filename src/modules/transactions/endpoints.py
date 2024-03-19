@@ -2,7 +2,7 @@ import string
 import random
 import os
 from werkzeug.utils import secure_filename
-from flask import request
+from flask import request, send_from_directory, send_file
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
@@ -30,67 +30,81 @@ class Transaction(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain[1]
+            print(role)
             if role == 'super_admin':
+                     print("hjbgjhg")
                      res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                     print(res)
                      res = TransactionsModel.query.filter_by(product_type= res.name).all()
+                     print(res)
             else:
                 domain = domain[2]
                 if int(product_type_id) in domain:
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter_by(product_type= res.name).all()
-
+            return res
         except Exception as e:
             return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
         
-    @api.arguments(schema=TransactionSchema())
+    # @api.arguments(schema=TransactionSchema())
     @jwt_required()
     @is_admin
-    def post(self,req_data,product_type_id,transactionid):
+    def post(self,product_type_id):
         try:
-            # schema = TransactionSchema()
-            # req_data = schema.load(request.form)
+            schema = TransactionSchema()
+            req_data = schema.load(request.form)
             domain = get_jwt()['sub']
             role= domain[1]
             if role == 'super_admin':
-                # print(request.files.get('attachments'))
-                # file = request.files.get('attachments')
-                # print(file.filename)
-                # if file.filename == '':
-                #     raise Exception("No file present in attachment.", HTTPStatus.NOT_FOUND)
-                # temp=file.filename.rsplit('.',1)
-                # temp= temp[1]
-                # print(temp)
-                # name = ''.join(random.choices(string.ascii_lowercase +
-                #              string.digits, k=12))
-                # file.filename = str(name) + "." + temp
-                # print(file.filename)
-                # if file_valid(file.filename):
-                #     filename = secure_filename(file.filename)
-                #     print(filename)
-                #     print(UPLOAD_FOLDER)
-                #     file.save(os.path.join(UPLOAD_FOLDER),filename)
-                # res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                files = request.files.getlist('attachments')
+                files_name = ''
+                for file in files:
+                    if file.filename == '':
+                        raise Exception("No file present in attachment.", HTTPStatus.NOT_FOUND)
+                    # file_stats = os.stat(file)
+                    # print()
+                    temp=file.filename.rsplit('.',1)
+                    temp= temp[1]
+                    name = ''.join(random.choices(string.ascii_lowercase +
+                                string.digits, k=25))
+                    file.filename = str(name) + "." + temp
+                    if file_valid(file.filename):
+                        filename = secure_filename(file.filename)
+                        files_name = files_name + filename + ','
+                        # file.save(os.path.join(os.sep, UPLOAD_FOLDER ,filename))
+                res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 entry = TransactionsModel(product_name= req_data.get('product_name'), price_per_unit= req_data.get('price_per_unit'),
                                     total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=res.name,
-                                    transaction_id= transactionid, order_status= 'order placed')
+                                    transaction_id= req_data.get('transaction_id'), order_status= 'order placed', attachments = files_name, attachments_count=len(files))
                 db.session.add(entry)
-                db.session.commit()
+                # db.session.commit()
                 return {"message":"Transaction recorded successfully.","status": HTTPStatus.OK}
             else:
                 domain = domain[2]
                 if int(product_type_id) in domain:
+                    file = request.files.get('attachments')
+                    if file.filename == '':
+                        raise Exception("No file present in attachment.", HTTPStatus.NOT_FOUND)
+                    temp=file.filename.rsplit('.',1)
+                    temp= temp[1]
+                    name = ''.join(random.choices(string.ascii_lowercase +
+                                string.digits, k=25))
+                    file.filename = str(name) + "." + temp
+                    if file_valid(file.filename):
+                        filename = secure_filename(file.filename)
+                        # file.save(os.path.join(os.sep, UPLOAD_FOLDER ,filename))
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     entry = TransactionsModel(product_name= req_data.get('product_name'), price_per_unit= req_data.get('price_per_unit'),
                                         total_price= req_data.get('total_price'), quantity=req_data.get('quantity'), product_type=res.name,
-                                        transaction_id= transactionid, order_status= 'order placed')
+                                        transaction_id= req_data.get('transaction_id'), order_status= 'order placed', attachments = filename)
                     db.session.add(entry)
-                    db.session.commit()
+                    # db.session.commit()
                     return {"message":"Transaction recorded successfully.","status": HTTPStatus.OK}
                 else:
                     raise Exception("This product type is out of your domain",HTTPStatus.UNAUTHORIZED)
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 @api.route('/product_type/<product_type_id>/transaction/<transactionid>')
@@ -166,7 +180,7 @@ class TransactionOperations(MethodView):
                     raise Exception("This product type is out of your domain", HTTPStatus.UNAUTHORIZED)
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
 
@@ -181,6 +195,52 @@ class Transactions(MethodView):
         try:
             res = TransactionsModel.query.all()
             return res
+        except Exception as e:
+            return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
+        
+@api.route('/product_type/<product_type_id>/attachments/transaction/<transactionid>')
+class Get_Attachment(MethodView):
+    @jwt_required()
+    @is_reader
+    def get(self, product_type_id,transactionid):
+        try:
+            domain = get_jwt()['sub']
+            role= domain[1]
+            if role == 'super_admin':
+                res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                res = TransactionsModel.query.filter(
+                            and_(
+                                TransactionsModel.transaction_id == transactionid,
+                                TransactionsModel.product_type == res.name
+                            )
+                        ).first()
+                res = res.attachments.split(",")
+                res.pop()
+            else:
+                domain = domain[2]
+                if int(product_type_id) in domain:
+                    res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                    res = TransactionsModel.query.filter(
+                                and_(
+                                    TransactionsModel.transaction_id == transactionid,
+                                    TransactionsModel.product_type == res.name
+                                )
+                            ).first()
+                    res = res.attachments.split(",")
+                    res.pop()
+            return res
+        except Exception as e:
+            return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
+        
+@api.route('/attachment/transaction/<path:filename>')
+class Get_Attachment(MethodView):
+    @jwt_required()
+    @is_reader
+    def get(self,filename):
+        try:
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            
+            return send_file(file_path)
         except Exception as e:
             return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
         

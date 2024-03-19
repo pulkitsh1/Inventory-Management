@@ -46,7 +46,7 @@ class Login(MethodView):
 
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 @api.route('/signup/')
@@ -80,7 +80,7 @@ class Signup(MethodView):
             return {"message":"User successfully registered.",'status': HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
     @api.arguments(schema=ChangePasswordSchema())
@@ -108,7 +108,7 @@ class Signup(MethodView):
             return {'message': 'Password successfully changed','status': HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 @api.route('/signup/<id>')
@@ -185,7 +185,7 @@ class Roles(MethodView):
             return {"message":"Role successfully registered.",'status': HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 @api.route('/role/<id>')
@@ -220,7 +220,7 @@ class RolesManagement(MethodView):
             return {"message":"Role successfully update.",'status': HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
 

@@ -69,7 +69,7 @@ class Inventory(MethodView):
                     raise Exception("The product type you are trying to add is out of your domain", HTTPStatus.UNAUTHORIZED)
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 @api.route('/product_type/<product_type_id>/inventory/<id>')
@@ -153,7 +153,7 @@ class InventoryOperations(MethodView):
             
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
     @api.arguments(schema=Delete())
@@ -193,7 +193,7 @@ class InventoryOperations(MethodView):
 
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 

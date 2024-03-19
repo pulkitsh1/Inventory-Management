@@ -12,6 +12,7 @@ class TransactionsModel(db.Model):
     transaction_id = db.Column(db.Integer, nullable=True)
     attachments = db.Column(db.String(256), nullable=True)
     order_status = db.Column(db.String(80), nullable=False)
+    attachments_count = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
         return f"Transaction '{self.product_name}','{self.price_per_unit}', '{self.total_price}','{self.quantity}','{self.product_type}','{self.order_placement_date}', '{self.transaction_id}','{self.attachments}','{self.order_status}')"

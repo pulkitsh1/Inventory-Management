@@ -68,7 +68,7 @@ class ProductTypeOperations(MethodView):
             return {'message':'Product Type description sucessfully updated',"status": HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
     @api.arguments(schema=ProductTypeDelete())
@@ -88,7 +88,7 @@ class ProductTypeOperations(MethodView):
             return {'message':'Product Type sucessfully deleted',"status": HTTPStatus.OK}
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
         
 @api.errorhandler(ValidationError)

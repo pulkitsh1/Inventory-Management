@@ -5,7 +5,9 @@ from flask_migrate import Migrate
 from src.modules import user_api, stock_api, transaction_api, type_api, emp_api, assign_api
 from src.service_modules.db.conn import db
 import config
+from src.utils.helper import UPLOAD_FOLDER
 from flask_smorest import Api
+import os
 
 app = Flask(__name__)
 
@@ -20,7 +22,8 @@ app.config['OPENAPI_VERSION'] = "3.0.3"
 app.config['OPENAPI_URL_PREFIX'] = "/"
 app.config['OPENAPI_SWAGGER_UI_PATH'] = "/swagger"
 app.config['OPENAPI_SWAGGER_UI_URL'] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
-
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
 
 db.init_app(app)
@@ -49,7 +52,11 @@ def revoked_token_callback(jwt_header, jwt_payload):
         HTTPStatus.UNAUTHORIZED
     )
 
+def run_migrations():
+    with app.app_context():
+        os.system("flask db upgrade")
 
 if __name__ == '__main__':
+    run_migrations()
     app.run(host='0.0.0.0', port=5000, debug=True)
     

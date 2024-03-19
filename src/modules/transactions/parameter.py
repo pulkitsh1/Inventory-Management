@@ -9,6 +9,7 @@ class TransactionSchema(ma.SQLAlchemyAutoSchema):
     quantity = Integer(required=True, load_only=True)
     price_per_unit = Integer(required=False, load_only=True)
     total_price = Integer(required=True, load_only=True)
+    transaction_id = Integer(required=True, load_only=True)
     product_type = String(required=False, load_only=True)
     attachments = Raw(type='file',required=False, load_only=True)
 

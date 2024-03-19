@@ -101,7 +101,7 @@ class AssignedOperations(MethodView):
                     raise Exception("The product type you are trying to access is out your domain", HTTPStatus.UNAUTHORIZED)
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 
@@ -169,7 +169,7 @@ class Assigned_History(MethodView):
                     raise Exception("The product type you are trying to access is out your domain", HTTPStatus.UNAUTHORIZED)
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
-            status_code = e.args[1].value if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR.value
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
             return {'error': error_message, 'status': status_code}
 
 

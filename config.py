@@ -8,7 +8,7 @@ load_dotenv()
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
+DB_NAME = os.getenv("DB_NAME",'inventory')
 
 jwt_redis_blocklist = redis.StrictRedis(
     host=DB_HOST, port=6379, db=0, decode_responses=True
