@@ -16,3 +16,5 @@ jwt_redis_blocklist = redis.StrictRedis(
 ACCESS_EXPIRES = timedelta(hours=1)
 SQL_CONNECTION = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 JWT_KEY = os.getenv('JWT_KEY', '298688260635158597817274397161605765004')
+
+ATTACHMENT_MAX_SIZE =10 * 1000 * 1000

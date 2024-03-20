@@ -23,7 +23,6 @@ app.config['OPENAPI_URL_PREFIX'] = "/"
 app.config['OPENAPI_SWAGGER_UI_PATH'] = "/swagger"
 app.config['OPENAPI_SWAGGER_UI_URL'] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 
 
 db.init_app(app)
@@ -51,6 +50,7 @@ def revoked_token_callback(jwt_header, jwt_payload):
         },
         HTTPStatus.UNAUTHORIZED
     )
+
 
 def run_migrations():
     with app.app_context():
