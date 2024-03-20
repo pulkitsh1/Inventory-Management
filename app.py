@@ -12,7 +12,6 @@ import os
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.SQL_CONNECTION
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 app.config['JWT_SECRET_KEY'] = config.JWT_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = config.ACCESS_EXPIRES
 app.config['PROPAGATE_EXCEPTION'] = True
