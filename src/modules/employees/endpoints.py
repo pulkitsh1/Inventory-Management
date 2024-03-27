@@ -1,8 +1,10 @@
+from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required
 from http import HTTPStatus
+import json
 from src.modules.employees.parameter import EmpAddchema
 from src.modules.employees.response import EmployeeResponse
 from src.modules.employees.models import Employee
@@ -23,7 +25,14 @@ class Employee(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=EmpAddchema())
     def post(self, req_data):
@@ -36,7 +45,14 @@ class Employee(MethodView):
             
             return {"message":"Employee successfully registered.",'status': HTTPStatus.OK}
         except Exception as e:
-            return {"error":f"{str(e)}",'status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/employee/<id>')
 class EmployeeOperations(MethodView):
@@ -50,7 +66,14 @@ class EmployeeOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @jwt_required()
     @is_super_admin
@@ -70,7 +93,12 @@ class EmployeeOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
         
 @api.errorhandler(ValidationError)

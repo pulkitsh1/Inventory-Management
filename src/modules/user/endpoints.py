@@ -1,3 +1,4 @@
+from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from marshmallow import ValidationError
@@ -12,6 +13,7 @@ from src.modules.user.parameter import SignupSchema, LoginSchema, ChangePassword
 from src.modules.user.response import UserResponse, UserRolesResponse
 from src.service_modules.auth import is_super_admin
 import config
+import json
 
 api = Blueprint("userinfo",__name__,description="Operations on Users")
 salt = bcrypt.gensalt()
@@ -40,14 +42,20 @@ class Login(MethodView):
             for i in role:
                 roles.append(i.id)
                 
-            token = create_access_token(identity= [req_data.get('email'), res.role[0].name, roles])
+            # token = create_access_token(identity= [req_data.get('email'), res.role[0].name, roles])
+            token = create_access_token(identity= {'email':req_data.get('email'),'role':res.role[0].name,'domain':roles})
             
-            return {"message":"Login successful","jwt_token":token,'status': HTTPStatus.OK}
+            return ({"message":"Login successful","jwt_token":token,'status': HTTPStatus.OK}),200
 
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/signup/')
 class Signup(MethodView):
@@ -62,7 +70,14 @@ class Signup(MethodView):
             return res
 
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=SignupSchema())
     def post(self, req_data):
@@ -81,16 +96,22 @@ class Signup(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=ChangePasswordSchema())
     @jwt_required()
     def put(self, req_data):
         try:
             email = get_jwt()['sub']
-                
-            email_exist = User.query.filter_by(email=email[0]).first()
+            email = email['email']
 
+            email_exist = User.query.filter_by(email=email).first()
+            
             stored_pass = email_exist.password.encode('utf-8')
             provided_pass = req_data.get('password').encode('utf-8')
             check_pass = bcrypt.checkpw(provided_pass, stored_pass)
@@ -109,7 +130,12 @@ class Signup(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/signup/<id>')
 class UserOperations(MethodView):
@@ -124,7 +150,14 @@ class UserOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
         
     # @api.arguments(schema=DeleteUserSchema())
@@ -141,7 +174,14 @@ class UserOperations(MethodView):
 
             return {"message":"User's status sucessfully changed",'status': HTTPStatus.OK}
         except Exception as e:
-            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.route('/logout')
@@ -153,7 +193,14 @@ class Logout(MethodView):
             config.jwt_redis_blocklist.set(jti, "", ex=config.ACCESS_EXPIRES)
             return {"merssage":"Successfully Logged out",'status': HTTPStatus.OK}
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 @api.route('/role/')
 class Roles(MethodView):
@@ -167,7 +214,14 @@ class Roles(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=RoleAddSchema())
     @jwt_required()
@@ -186,7 +240,12 @@ class Roles(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/role/<id>')
 class RolesManagement(MethodView):
@@ -200,7 +259,14 @@ class RolesManagement(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=RoleUpdateSchema())
     @jwt_required()
@@ -221,7 +287,12 @@ class RolesManagement(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.errorhandler(ValidationError)

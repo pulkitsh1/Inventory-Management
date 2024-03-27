@@ -1,9 +1,10 @@
+from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
+import json
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt
-from sqlalchemy import and_
 from src.service_modules.db.conn import db
 from src.modules.inventory.models import Inventory
 from src.modules.assigned.models import Assigned
@@ -16,7 +17,7 @@ from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 api = Blueprint("inventory",__name__,description="Operations on Inventory")
 
 @api.route('/product_type/<product_type_id>/inventory/')
-class Inventory(MethodView):
+class InventoryOperations(MethodView):
 
     @api.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
@@ -24,18 +25,25 @@ class Inventory(MethodView):
     def get(self,product_type_id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Inventory.query.filter_by(product_type_id=product_type_id).all()
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res = Inventory.query.filter_by(product_type_id=product_type_id).all()
 
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=Product())
     @jwt_required()
@@ -43,7 +51,7 @@ class Inventory(MethodView):
     def post(self, req_data,product_type_id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Product_type.query.filter_by(id=int(product_type_id)).first()
                 if res == None:
@@ -54,7 +62,7 @@ class Inventory(MethodView):
                 db.session.commit()
                 return {"message":"Product added successfully.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Product_type.query.filter_by(id=int(product_type_id)).first()
@@ -70,10 +78,15 @@ class Inventory(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/product_type/<product_type_id>/inventory/<id>')
-class InventoryOperations(MethodView):
+class ProductInventory(MethodView):
 
     @api.response(HTTPStatus.OK,schema=ProductResponse(many=True))
     @jwt_required()
@@ -81,13 +94,13 @@ class InventoryOperations(MethodView):
     def get(self,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Inventory.query.filter_by(id=id).all()
                 if res[0].products.id != int(product_type_id):
                         res = []
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Inventory.query.filter_by(id=id).all()
@@ -96,7 +109,14 @@ class InventoryOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
     
     @api.arguments(schema=Update())
     @jwt_required()
@@ -104,7 +124,7 @@ class InventoryOperations(MethodView):
     def put(self, get_data,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 product_data = Inventory.query.filter_by(id=id).first()
                 if product_data == None:
@@ -125,7 +145,7 @@ class InventoryOperations(MethodView):
 
                 return {"message":"Quanity of the product successfully updated.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     product_data = Inventory.query.filter_by(id=id).first()
@@ -154,7 +174,12 @@ class InventoryOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=Delete())
     @jwt_required()
@@ -162,7 +187,7 @@ class InventoryOperations(MethodView):
     def delete(self, get_data,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Inventory.query.filter_by(id=id).first()
                 if res.product_type_id != int(product_type_id):
@@ -175,7 +200,7 @@ class InventoryOperations(MethodView):
 
                 return {'message':'Product status successfully updated',"status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Inventory.query.filter_by(id=id).first()
@@ -194,7 +219,12 @@ class InventoryOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 
 
@@ -209,7 +239,14 @@ class ListProducts(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.route('/product_type/<product_type_id>/countofproducts/inventory/<id>')
@@ -219,7 +256,7 @@ class CountOfProducts(MethodView):
     def get(self,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Inventory.query.filter_by(id=id).first()
                 total = 0
@@ -234,7 +271,7 @@ class CountOfProducts(MethodView):
                     "product_type_id": res.product_type_id
                 }
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Inventory.query.filter_by(id=id).first()
@@ -252,7 +289,14 @@ class CountOfProducts(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.errorhandler(ValidationError)

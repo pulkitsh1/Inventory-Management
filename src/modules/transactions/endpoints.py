@@ -1,6 +1,8 @@
 import string
 import random
 import os
+import json
+from flask import abort, Response
 from werkzeug.utils import secure_filename
 from flask import request, send_file
 from flask.views import MethodView
@@ -29,22 +31,26 @@ class Transaction(MethodView):
     def get(self,product_type_id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
-            print(role)
+            role= domain['role']
             if role == 'super_admin':
-                     print("hjbgjhg")
-                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
-                     print(res)
-                     res = TransactionsModel.query.filter_by(product_type= res.name).all()
-                     print(res)
+                    res = Product_type.query.filter_by(id = int(product_type_id)).first()
+                    res = TransactionsModel.query.filter_by(product_type= res.name).all()
+                     
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter_by(product_type= res.name).all()
             return res
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     # @api.arguments(schema=TransactionSchema())
     @jwt_required()
@@ -54,7 +60,7 @@ class Transaction(MethodView):
             schema = TransactionSchema()
             req_data = schema.load(request.form)
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 files = request.files.getlist('attachments')
                 files_name = ''
@@ -67,7 +73,7 @@ class Transaction(MethodView):
                     file.flush()
                     size = os.fstat(file.fileno()).st_size
                     total_size = total_size + size
-                print(total_size)
+                
                 if not total_size <= int(ATTACHMENT_MAX_SIZE):
                     raise Exception("Attachments size has exceeded the limit of 10 MB.", HTTPStatus.NOT_FOUND)
                 for file in files:
@@ -88,7 +94,7 @@ class Transaction(MethodView):
                 db.session.commit()
                 return {"message":"Transaction recorded successfully.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     files = request.files.getlist('attachments')
                     files_name = ''
@@ -101,7 +107,7 @@ class Transaction(MethodView):
                         file.flush()
                         size = os.fstat(file.fileno()).st_size
                         total_size = total_size + size
-                    print(total_size)
+                    
                     if not total_size <= int(ATTACHMENT_MAX_SIZE):
                         raise Exception("Attachments size has exceeded the limit of 10 MB.", HTTPStatus.NOT_FOUND)
                     for file in files:
@@ -126,7 +132,12 @@ class Transaction(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/product_type/<product_type_id>/transaction/<transactionid>')
 class TransactionOperations(MethodView):
@@ -137,7 +148,7 @@ class TransactionOperations(MethodView):
     def get(self,product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 res = TransactionsModel.query.filter(
@@ -147,7 +158,7 @@ class TransactionOperations(MethodView):
                         )
                     ).all()
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter(
@@ -159,7 +170,14 @@ class TransactionOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     # @api.arguments(schema=TransactionIDSchema())
     @jwt_required()
@@ -167,7 +185,7 @@ class TransactionOperations(MethodView):
     def put(self,product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = TransactionsModel.query.filter_by(transaction_id= transactionid).first()
                 res.order_status = 'Delivered'
@@ -182,7 +200,7 @@ class TransactionOperations(MethodView):
                 db.session.commit()
                 return {"message":"Quanity of the product successfully updated.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = TransactionsModel.query.filter_by(transaction_id= transactionid).first()
@@ -202,7 +220,12 @@ class TransactionOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.route('/transactions')
@@ -217,7 +240,14 @@ class Transactions(MethodView):
             res = TransactionsModel.query.all()
             return res
         except Exception as e:
-            return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 @api.route('/product_type/<product_type_id>/attachments/transaction/<transactionid>')
 class Get_Attachment(MethodView):
@@ -226,7 +256,7 @@ class Get_Attachment(MethodView):
     def get(self, product_type_id,transactionid):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 res = TransactionsModel.query.filter(
@@ -238,7 +268,7 @@ class Get_Attachment(MethodView):
                 res = res.attachments.split(",")
                 res.pop()
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter(
@@ -251,7 +281,14 @@ class Get_Attachment(MethodView):
                     res.pop()
             return res
         except Exception as e:
-            return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 @api.route('/attachment/transaction/<path:filename>')
 class Get_Attachment(MethodView):
@@ -263,7 +300,14 @@ class Get_Attachment(MethodView):
             
             return send_file(file_path)
         except Exception as e:
-            return {"error":f"{str(e)}","status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 
 @api.errorhandler(ValidationError)

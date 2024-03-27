@@ -1,6 +1,8 @@
+from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
+import json
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy import and_
@@ -22,11 +24,11 @@ class Assigned(MethodView):
     def get(self,product_type_id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res= Assigned.query.filter_by(product_type_id= int(product_type_id)).all()
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res= Assigned.query.filter_by(product_type_id= int(product_type_id)).all()
@@ -34,7 +36,14 @@ class Assigned(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/product_type/<product_type_id>/role/<id>')
 class AssignedOperations(MethodView):
@@ -45,7 +54,7 @@ class AssignedOperations(MethodView):
     def get(self,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Assigned.query.filter(
                         and_(
@@ -53,7 +62,7 @@ class AssignedOperations(MethodView):
                             Assigned.product_type_id == int(product_type_id)
                         )).all()
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Assigned.query.filter(
@@ -64,7 +73,14 @@ class AssignedOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
     
     @api.arguments(schema=UpdateStatus())
     @jwt_required()
@@ -72,7 +88,7 @@ class AssignedOperations(MethodView):
     def put(self,req_data,product_type_id,id):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res =Assigned.query.filter(
                             and_(
@@ -85,7 +101,7 @@ class AssignedOperations(MethodView):
                 db.session.commit()
                 return {'message': "Assigned product's status successfully changed.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res = Assigned.query.filter(
                             and_(
@@ -102,7 +118,12 @@ class AssignedOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 
 @api.route('/product_type/<product_type_id>/product/<unique_code>')
@@ -114,7 +135,7 @@ class Assigned_History(MethodView):
     def get(self,product_type_id,unique_code):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res = Assigned.query.filter(
                         and_(
@@ -122,7 +143,7 @@ class Assigned_History(MethodView):
                             Assigned.product_type_id == int(product_type_id)
                         )).all()
             else:
-                domain = domain[2]
+                domain = domain['domain']
 
                 if int(product_type_id) in domain:
                     res = Assigned.query.filter(
@@ -133,14 +154,21 @@ class Assigned_History(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
     
     @jwt_required()
     @is_member
     def put(self,product_type_id,unique_code):
         try:
             domain = get_jwt()['sub']
-            role= domain[1]
+            role= domain['role']
             if role == 'super_admin':
                 res =Assigned.query.filter(
                             and_(
@@ -153,7 +181,7 @@ class Assigned_History(MethodView):
                 db.session.commit()
                 return {'message': "Assigned product's return date successfully stored.","status": HTTPStatus.OK}
             else:
-                domain = domain[2]
+                domain = domain['domain']
                 if int(product_type_id) in domain:
                     res =Assigned.query.filter(
                             and_(
@@ -170,9 +198,12 @@ class Assigned_History(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
-
-
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 
 @api.errorhandler(ValidationError)

@@ -1,6 +1,8 @@
+from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
+import json
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
 from src.modules.product_type.models import Product_type
@@ -23,7 +25,14 @@ class ProductType(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=ProductType_Schema())
     @jwt_required()
@@ -37,7 +46,14 @@ class ProductType(MethodView):
 
             return {'message':'Product Type sucessfully added',"status": HTTPStatus.OK}
         except Exception as e:
-            return {'error':f'{str(e)}','status': HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
 @api.route('/product_type/<id>')
 class ProductTypeOperations(MethodView):
@@ -51,7 +67,14 @@ class ProductTypeOperations(MethodView):
             return res
         
         except Exception as e:
-            return {'error': f'{str(e)}',"status": HTTPStatus.INTERNAL_SERVER_ERROR}
+            error_message = str(e.args[0]) if e.args else 'An error occurred'
+            status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
 
         
     @api.arguments(schema=ProductTypeUpdate())
@@ -69,7 +92,12 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
     @api.arguments(schema=ProductTypeDelete())
     @jwt_required()
@@ -89,7 +117,12 @@ class ProductTypeOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
-            return {'error': error_message, 'status': status_code}
+            error_message = {
+                'error': error_message,
+                'status': status_code
+            }
+            error_message = json.dumps(error_message)
+            abort(Response(error_message, status_code, mimetype='application/json'))
         
 @api.errorhandler(ValidationError)
 def handle_marshmallow_error(e):
