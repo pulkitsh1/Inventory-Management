@@ -2,7 +2,7 @@ from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
-import json
+import json, logging
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt
 from sqlalchemy import and_
@@ -12,6 +12,7 @@ from src.modules.assigned.response import AssignedResponse
 from src.modules.assigned.parameter import UpdateStatus
 from datetime import datetime
 from src.service_modules.auth import is_reader, is_member
+from src.utils.constants import Constants
 
 api = Blueprint("assigned",__name__,description="Operations on Assigned products")
 
@@ -25,7 +26,7 @@ class Assigned(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res= Assigned.query.filter_by(product_type_id= int(product_type_id)).all()
             else:
                 domain = domain['domain']
@@ -38,6 +39,7 @@ class Assigned(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -55,7 +57,7 @@ class AssignedOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Assigned.query.filter(
                         and_(
                             Assigned.id == int(id),
@@ -75,6 +77,7 @@ class AssignedOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -89,7 +92,7 @@ class AssignedOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res =Assigned.query.filter(
                             and_(
                                 Assigned.id == int(id),
@@ -118,6 +121,7 @@ class AssignedOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -136,7 +140,7 @@ class Assigned_History(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Assigned.query.filter(
                         and_(
                             Assigned.unique_code == unique_code,
@@ -156,6 +160,7 @@ class Assigned_History(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -169,7 +174,7 @@ class Assigned_History(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res =Assigned.query.filter(
                             and_(
                                 Assigned.unique_code == unique_code,
@@ -198,6 +203,7 @@ class Assigned_History(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code

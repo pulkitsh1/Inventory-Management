@@ -4,7 +4,7 @@ from flask_smorest import Blueprint
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required
 from http import HTTPStatus
-import json
+import json, logging
 from src.modules.employees.parameter import EmpAddchema
 from src.modules.employees.response import EmployeeResponse
 from src.modules.employees.models import Employee
@@ -27,6 +27,7 @@ class Employee(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -47,6 +48,7 @@ class Employee(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -68,6 +70,7 @@ class EmployeeOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -93,6 +96,7 @@ class EmployeeOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code

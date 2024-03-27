@@ -14,9 +14,11 @@ from src.modules.user.response import UserResponse, UserRolesResponse
 from src.service_modules.auth import is_super_admin
 import config
 import json
+import logging
 
 api = Blueprint("userinfo",__name__,description="Operations on Users")
 salt = bcrypt.gensalt()
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 @api.route('/login')
 class Login(MethodView):
@@ -45,11 +47,12 @@ class Login(MethodView):
             # token = create_access_token(identity= [req_data.get('email'), res.role[0].name, roles])
             token = create_access_token(identity= {'email':req_data.get('email'),'role':res.role[0].name,'domain':roles})
             
-            return ({"message":"Login successful","jwt_token":token,'status': HTTPStatus.OK}),200
+            return {"message":"Login successful","jwt_token":token,'status': HTTPStatus.OK}
 
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -72,6 +75,7 @@ class Signup(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -96,6 +100,7 @@ class Signup(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -130,6 +135,7 @@ class Signup(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -152,6 +158,7 @@ class UserOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -176,6 +183,7 @@ class UserOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -195,6 +203,7 @@ class Logout(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -216,6 +225,7 @@ class Roles(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -240,6 +250,7 @@ class Roles(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -261,6 +272,7 @@ class RolesManagement(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -287,6 +299,7 @@ class RolesManagement(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code

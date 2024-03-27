@@ -1,7 +1,4 @@
-import string
-import random
-import os
-import json
+import string, random, os, json, logging
 from flask import abort, Response
 from werkzeug.utils import secure_filename
 from flask import request, send_file
@@ -20,6 +17,8 @@ from src.modules.transactions.response import TransactionResponse
 from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
 from src.utils.helper import *
 from config import *
+from src.utils.constants import Constants
+
 api = Blueprint("transactions",__name__,description="Operations related Transactions")
 
 @api.route('/product_type/<product_type_id>/transaction/')
@@ -32,7 +31,7 @@ class Transaction(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                     res = Product_type.query.filter_by(id = int(product_type_id)).first()
                     res = TransactionsModel.query.filter_by(product_type= res.name).all()
                      
@@ -45,6 +44,7 @@ class Transaction(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -61,7 +61,7 @@ class Transaction(MethodView):
             req_data = schema.load(request.form)
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 files = request.files.getlist('attachments')
                 files_name = ''
                 # file_size = files.read()
@@ -132,6 +132,7 @@ class Transaction(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -149,7 +150,7 @@ class TransactionOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 res = TransactionsModel.query.filter(
                         and_(
@@ -172,6 +173,7 @@ class TransactionOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -186,9 +188,9 @@ class TransactionOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = TransactionsModel.query.filter_by(transaction_id= transactionid).first()
-                res.order_status = 'Delivered'
+                res.order_status = Constants.update_order_status.value
                 quantity = res.quantity
                 adjust = Inventory.query.filter_by(product_name= res.product_name).first()
                 if adjust != None:
@@ -204,7 +206,7 @@ class TransactionOperations(MethodView):
 
                 if int(product_type_id) in domain:
                     res = TransactionsModel.query.filter_by(transaction_id= transactionid).first()
-                    res.order_status = 'Delivered'
+                    res.order_status = Constants.update_order_status.value
                     quantity = res.quantity
                     adjust = Inventory.query.filter_by(product_name= res.product_name).first()
                     if adjust != None:
@@ -220,6 +222,7 @@ class TransactionOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -242,6 +245,7 @@ class Transactions(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -257,7 +261,7 @@ class Get_Attachment(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Product_type.query.filter_by(id = int(product_type_id)).first()
                 res = TransactionsModel.query.filter(
                             and_(
@@ -283,6 +287,7 @@ class Get_Attachment(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -302,6 +307,7 @@ class Get_Attachment(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code

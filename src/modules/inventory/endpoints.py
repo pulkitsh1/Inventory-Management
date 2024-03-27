@@ -2,7 +2,7 @@ from flask import abort, Response
 from flask.views import MethodView
 from flask_smorest import Blueprint
 from http import HTTPStatus
-import json
+import json, logging
 from marshmallow import ValidationError
 from flask_jwt_extended import jwt_required, get_jwt
 from src.service_modules.db.conn import db
@@ -13,6 +13,7 @@ from src.modules.product_type.models import Product_type
 from src.modules.inventory.parameter import Product, Update, Delete
 from src.modules.inventory.response import ProductResponse
 from src.service_modules.auth import is_admin,is_member,is_reader,is_super_admin
+from src.utils.constants import Constants
 
 api = Blueprint("inventory",__name__,description="Operations on Inventory")
 
@@ -26,7 +27,7 @@ class InventoryOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Inventory.query.filter_by(product_type_id=product_type_id).all()
             else:
                 domain = domain['domain']
@@ -38,6 +39,7 @@ class InventoryOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -52,7 +54,7 @@ class InventoryOperations(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Product_type.query.filter_by(id=int(product_type_id)).first()
                 if res == None:
                     raise Exception("No product type exists by this id",HTTPStatus.NOT_FOUND)
@@ -78,6 +80,7 @@ class InventoryOperations(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -95,7 +98,7 @@ class ProductInventory(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Inventory.query.filter_by(id=id).all()
                 if res[0].products.id != int(product_type_id):
                         res = []
@@ -111,6 +114,7 @@ class ProductInventory(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -125,18 +129,18 @@ class ProductInventory(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 product_data = Inventory.query.filter_by(id=id).first()
                 if product_data == None:
                     raise Exception("The product id is not listed")
                 
-                if product_data.status != "active":
+                if product_data.status != Constants.active_status.value:
                     raise Exception("The product is not available")
                 
                 product_data.quantity = product_data.quantity - get_data.get('quantity')
                 emp_data = Employee.query.filter_by(id=get_data.get('emp_id')).first()
                 type_id = Product_type.query.filter_by(id=product_data.product_type_id).first()
-                if type_id.name != 'it':
+                if type_id.name != Constants.type_it.value:
                     entry = Assigned(product=product_data,employee=emp_data, quantity=get_data.get('quantity'),product_type= type_id ,status= 'ok')
                 else:
                     entry = Assigned(product=product_data,employee=emp_data, quantity=get_data.get('quantity'),product_type= type_id,unique_code=get_data.get('unique_code') ,status= 'ok')
@@ -154,13 +158,13 @@ class ProductInventory(MethodView):
                     if product_data == None:
                         raise Exception("The product id is not listed", HTTPStatus.NOT_FOUND)
                 
-                    if product_data.status != "active":
+                    if product_data.status != Constants.active_status.value:
                         raise Exception("The product is not available",HTTPStatus.NOT_FOUND)
                     
                     product_data.quantity = product_data.quantity - get_data.get('quantity')
                     emp_data = Employee.query.filter_by(id=get_data.get('emp_id')).first()
                     type_id = Product_type.query.filter_by(id=product_data.product_type_id).first()
-                    if type_id.name != 'it':
+                    if type_id.name != Constants.type_it.value:
                         entry = Assigned(product=product_data,employee=emp_data, quantity=get_data.get('quantity'),product_type= type_id ,status= 'ok')
                     else:
                         entry = Assigned(product=product_data,employee=emp_data, quantity=get_data.get('quantity'),product_type= type_id,unique_code=get_data.get('unique_code') ,status= 'ok')
@@ -174,6 +178,7 @@ class ProductInventory(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -188,7 +193,7 @@ class ProductInventory(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Inventory.query.filter_by(id=id).first()
                 if res.product_type_id != int(product_type_id):
                     raise Exception("Your product id doesn't match your product type", HTTPStatus.UNAUTHORIZED)
@@ -219,6 +224,7 @@ class ProductInventory(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -241,6 +247,7 @@ class ListProducts(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
@@ -257,7 +264,7 @@ class CountOfProducts(MethodView):
         try:
             domain = get_jwt()['sub']
             role= domain['role']
-            if role == 'super_admin':
+            if role == Constants.super_role.value:
                 res = Inventory.query.filter_by(id=id).first()
                 total = 0
                 for i in res.assigned:
@@ -291,6 +298,7 @@ class CountOfProducts(MethodView):
         except Exception as e:
             error_message = str(e.args[0]) if e.args else 'An error occurred'
             status_code = e.args[1] if len(e.args) > 1 else HTTPStatus.INTERNAL_SERVER_ERROR
+            logging.exception(error_message)
             error_message = {
                 'error': error_message,
                 'status': status_code
